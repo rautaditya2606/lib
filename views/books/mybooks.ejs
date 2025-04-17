@@ -1,0 +1,112 @@
+<%- include('../partials/header') %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="display-5 fw-bold text-dark">
+      <i class="fas fa-bookmark text-primary me-2"></i>My Books
+    </h1>
+    <div class="text-muted">
+      <i class="fas fa-calendar-day me-1"></i> <%= currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %>
+    </div>
+  </div>
+
+  <% if (myBooks.length === 0) { %>
+    <div class="card shadow-sm">
+      <div class="card-body text-center py-5">
+        <i class="fas fa-book-open fa-4x text-muted mb-4"></i>
+        <h3 class="text-muted">No Books Issued</h3>
+        <p class="text-muted">You haven't borrowed any books yet.</p>
+        <a href="/books/available" class="btn btn-primary mt-3">
+          <i class="fas fa-book me-1"></i> Browse Available Books
+        </a>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Cover</th>
+            <th>Book Details</th>
+            <th>Issue Date</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Fine</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% myBooks.forEach(book => { 
+            const statusClass = book.isOverdue ? 'overdue' : (book.daysRemaining < 3 ? 'due-soon' : 'available');
+            const statusText = book.isOverdue ? 'Overdue' : (book.daysRemaining < 3 ? 'Due Soon' : 'On Time');
+          %>
+            <tr>
+              <td>
+                <div class="bg-light rounded p-2" style="width: 60px; height: 80px;">
+                  <i class="fas fa-book fa-2x text-secondary d-flex justify-content-center align-items-center h-100"></i>
+                </div>
+              </td>
+              <td>
+                <h5 class="mb-1"><%= book.title %></h5>
+                <p class="text-muted mb-0"><%= book.author %></p>
+                <small class="text-muted">ID: <%= book.id %></small>
+              </td>
+              <td>
+                <%= book.transaction.issueDate.toLocaleDateString() %>
+              </td>
+              <td>
+                <%= book.dueDate.toLocaleDateString() %>
+              </td>
+              <td>
+                <span class="status-badge <%= statusClass %>">
+                  <i class="fas fa-<%= book.isOverdue ? 'exclamation-triangle' : (book.daysRemaining < 3 ? 'clock' : 'check-circle') %> me-1"></i>
+                  <%= statusText %>
+                  <% if (!book.isOverdue) { %>
+                    (<%= book.daysRemaining %> days)
+                  <% } %>
+                </span>
+              </td>
+              <td>
+                <% if (book.fine > 0) { %>
+                  <span class="text-danger fw-bold">₹<%= book.fine %></span>
+                <% } else { %>
+                  <span class="text-success">None</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (!book.isOverdue && book.daysRemaining < 5) { %>
+                  <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#renewModal<%= book.id %>">
+                    <i class="fas fa-sync-alt me-1"></i> Renew
+                  </button>
+                <% } %>
+              </td>
+            </tr>
+
+            <!-- Renew Modal -->
+            <div class="modal fade" id="renewModal<%= book.id %>" tabindex="-1">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Renew Book</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <p>Are you sure you want to renew "<strong><%= book.title %></strong>"?</p>
+                    <p>The new due date will be <strong><%= new Date(book.dueDate.getTime() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString() %></strong>.</p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="/books/renew" method="POST" class="d-inline">
+                      <input type="hidden" name="bookId" value="<%= book.id %>">
+                      <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sync-alt me-1"></i> Confirm Renew
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+<%- include('../partials/footer') %>

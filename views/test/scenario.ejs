@@ -1,0 +1,33 @@
+<%- include('../partials/header') %>
+<div class="container my-5">
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <h2 class="h5 mb-0">Test Scenario: Due Date Reminder</h2>
+    </div>
+    <div class="card-body">
+      <% if (error) { %>
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-circle me-2"></i>
+          <%= error %>
+        </div>
+      <% } else { %>
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle me-2"></i>
+          Email sent successfully!
+        </div>
+
+        <div class="mt-4">
+          <h3 class="h6">Scenario Details:</h3>
+          <ul class="list-unstyled">
+            <li><strong>Student:</strong> <%= user.name %> (<%= user.studentId %>)</li>
+            <li><strong>Email:</strong> <%= user.email %></li>
+            <li><strong>Book:</strong> <%= book.title %></li>
+            <li><strong>Due Date:</strong> <%= dueDate.toDateString() %></li>
+            <li><strong>Message ID:</strong> <%= messageId %></li>
+          </ul>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

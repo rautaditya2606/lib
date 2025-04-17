@@ -1,0 +1,16 @@
+<%- include('../partials/header') %>
+  <h1>Search Results for "<%= query %>"</h1>
+  
+  <% if (results.length === 0) { %>
+    <p>No books found matching your query.</p>
+  <% } else { %>
+    <ul>
+      <% results.forEach(book => { %>
+        <li>
+          <strong><%= book.title %></strong> by <%= book.author %> 
+          (<%= book.available ? 'Available' : 'Issued' %>)
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+<%- include('../partials/footer') %>

@@ -1,0 +1,110 @@
+<%- include('../partials/header') %>
+<div class="container my-5">
+  <h1 class="mb-4">Issue Books</h1>
+  
+  <div class="card mb-5 shadow-sm">
+    <div class="card-header">
+      <h2 class="h5 mb-0">Issue a Book</h2>
+    </div>
+    <div class="card-body">
+      <form action="/books/issue" method="POST" id="issueForm">
+        <!-- Book Selection -->
+        <div class="mb-4">
+          <label class="form-label">Select Book</label>
+          <select id="bookId" name="bookId" class="form-select" required>
+            <option value="">Choose a book...</option>
+            <% availableBooks.forEach(book => { %>
+              <option value="<%= book.id %>"><%= book.title %> (ID: <%= book.id %>)</option>
+            <% }) %>
+          </select>
+          <div class="invalid-feedback">Please select a book</div>
+        </div>
+
+        <!-- Student Selection -->
+        <div class="mb-4">
+          <label class="form-label">Select Student</label>
+          <select id="userId" name="userId" class="form-select" required>
+            <option value="">Choose a student...</option>
+            <% allUsers.filter(u => u.role === 'student').forEach(student => { %>
+              <option value="<%= student.id %>"><%= student.studentId %> - <%= student.name %></option>
+            <% }) %>
+          </select>
+          <div class="invalid-feedback">Please select a student</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <i class="fas fa-hand-holding me-1"></i> Issue Book
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Currently Issued Books Section -->
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <h2 class="h5 mb-0">Currently Issued Books</h2>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Issued To</th>
+              <th>Due Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% issuedBooks.forEach(book => { %>
+              <tr>
+                <td><%= book.id %></td>
+                <td><%= book.title %></td>
+                <td><%= book.author %></td>
+                <td>
+                  <% const user = allUsers.find(u => u.id === book.issuedTo) %>
+                  <%= user ? user.studentId : 'Unknown' %>
+                </td>
+                <td><%= book.dueDate ? book.dueDate.toDateString() : 'N/A' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('issueForm');
+  const bookSelect = document.getElementById('bookId');
+  const userSelect = document.getElementById('userId');
+  
+  form.addEventListener('submit', function(e) {
+    if (!bookSelect.value || !userSelect.value) {
+      e.preventDefault();
+      if (!bookSelect.value) bookSelect.classList.add('is-invalid');
+      if (!userSelect.value) userSelect.classList.add('is-invalid');
+    }
+  });
+
+  [bookSelect, userSelect].forEach(select => {
+    select.addEventListener('change', function() {
+      this.classList.remove('is-invalid');
+    });
+  });
+});
+</script>
+
+<style>
+.form-select {
+  cursor: pointer;
+}
+.form-select:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+</style>
+<%- include('../partials/footer') %>

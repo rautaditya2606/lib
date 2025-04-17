@@ -1,0 +1,121 @@
+<%- include('../partials/header') %>
+<div class="container my-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="display-5 fw-bold text-dark">
+      <i class="fas fa-undo text-primary me-2"></i>Return Books
+    </h1>
+  </div>
+
+  <!-- Return Form Card -->
+  <div class="card mb-5 shadow-sm">
+    <div class="card-header">
+      <h2 class="h5 mb-0">Return a Book</h2>
+    </div>
+    <div class="card-body">
+      <form action="/books/return" method="POST">
+        <div class="mb-3">
+          <label for="bookId" class="form-label">Select Book to Return</label>
+          <select id="bookId" name="bookId" class="form-select" required>
+            <option value="">Choose a book to return...</option>
+            <% issuedBooks.forEach(book => { 
+              const user = allUsers.find(u => u.id === book.issuedTo);
+            %>
+              <option value="<%= book.id %>">
+                <%= book.title %> by <%= book.author %> 
+                (Issued to: <%= user ? user.studentId : 'Unknown' %>)
+              </option>
+            <% }) %>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-undo me-2"></i>Return Book
+        </button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Issued Books Table Card -->
+  <div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0">Currently Issued Books</h2>
+      <span class="badge bg-primary"><%= issuedBooks.length %> Books</span>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>Book Details</th>
+              <th>Issued To</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% issuedBooks.forEach(book => { 
+              const user = allUsers.find(u => u.id === book.issuedTo);
+              const dueDate = new Date(book.dueDate);
+              const today = new Date();
+              const daysRemaining = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+              let statusClass = 'bg-success';
+              let statusText = 'On Time';
+              
+              if (daysRemaining < 0) {
+                statusClass = 'bg-danger';
+                statusText = 'Overdue';
+              } else if (daysRemaining <= 3) {
+                statusClass = 'bg-warning text-dark';
+                statusText = 'Due Soon';
+              }
+            %>
+              <tr>
+                <td>
+                  <h6 class="mb-0"><%= book.title %></h6>
+                  <small class="text-muted">
+                    by <%= book.author %> (ID: <%= book.id %>)
+                  </small>
+                </td>
+                <td>
+                  <% if (user) { %>
+                    <div class="d-flex align-items-center">
+                      <div class="me-2">
+                        <i class="fas fa-user-circle fa-2x text-secondary"></i>
+                      </div>
+                      <div>
+                        <div><%= user.studentId %></div>
+                        <small class="text-muted"><%= user.name %></small>
+                      </div>
+                    </div>
+                  <% } else { %>
+                    <span class="text-muted">Unknown</span>
+                  <% } %>
+                </td>
+                <td>
+                  <div><%= book.dueDate ? book.dueDate.toDateString() : 'N/A' %></div>
+                  <% if (daysRemaining !== 'N/A') { %>
+                    <small class="text-muted">
+                      <%= Math.abs(daysRemaining) %> days <%= daysRemaining >= 0 ? 'remaining' : 'overdue' %>
+                    </small>
+                  <% } %>
+                </td>
+                <td>
+                  <span class="badge <%= statusClass %>"><%= statusText %></span>
+                </td>
+                <td>
+                  <form action="/books/return" method="POST" style="display: inline;">
+                    <input type="hidden" name="bookId" value="<%= book.id %>">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                      <i class="fas fa-undo me-1"></i>Return
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

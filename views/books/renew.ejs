@@ -1,0 +1,18 @@
+<%- include('../partials/header') %>
+  <h1>Renew Books</h1>
+  <% if (myBooks.length === 0) { %>
+    <p>You have no books eligible for renewal.</p>
+  <% } else { %>
+    <ul>
+      <% myBooks.forEach(book => { %>
+        <li>
+          <%= book.title %> - Due: <%= book.dueDate ? book.dueDate.toDateString() : 'N/A' %>
+          <form action="/books/renew" method="POST" style="display:inline;">
+            <input type="hidden" name="bookId" value="<%= book.id %>">
+            <button type="submit">Renew</button>
+          </form>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+<%- include('../partials/footer') %>

@@ -1,0 +1,132 @@
+<%- include('../partials/header') %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="display-5 fw-bold text-dark">
+      <i class="fas fa-book text-primary me-2"></i>Available Books
+    </h1>
+    <form class="d-flex gap-2" action="/books/available" method="GET">
+      <select name="section" class="form-select" style="width: 150px;">
+        <option value="">All Sections</option>
+        <% sections.forEach(section => { %>
+          <option value="<%= section %>" <%= sectionFilter === section ? 'selected' : '' %>>
+            <%= section.charAt(0).toUpperCase() + section.slice(1) %>
+          </option>
+        <% }) %>
+      </select>
+      <div class="input-group">
+        <input 
+          type="text" 
+          class="form-control" 
+          placeholder="Search by title or author..." 
+          name="q"
+          value="<%= searchQuery %>"
+        >
+        <button class="btn btn-primary" type="submit">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <% if (searchQuery || sectionFilter) { %>
+    <div class="mb-3">
+      <a href="/books/available" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-times me-1"></i>Clear Filters
+      </a>
+    </div>
+  <% } %>
+
+  <% if (books.length === 0) { %>
+    <div class="card shadow-sm">
+      <div class="card-body text-center py-5">
+        <i class="fas fa-book-open fa-4x text-muted mb-4"></i>
+        <h3 class="text-muted">No Books Available</h3>
+        <p class="text-muted">All books are currently checked out.</p>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      <% books.forEach(book => { %>
+        <div class="col">
+          <div class="card h-100 shadow-sm">
+            <div class="card-img-top bg-light d-flex justify-content-center align-items-center p-3" style="height: 250px;">
+              <% if (book.coverUrl) { %>
+                <img 
+                  src="<%= book.coverUrl %>" 
+                  alt="<%= book.title %>" 
+                  class="img-fluid book-cover"
+                  onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<i class=\'fas fa-book-open fa-4x text-secondary\'></i>';"
+                >
+              <% } else { %>
+                <i class="fas fa-book-open fa-4x text-secondary"></i>
+              <% } %>
+            </div>
+
+            <style>
+              .book-cover {
+                max-height: 100%;
+                max-width: 100%;
+                object-fit: contain;
+                height: auto;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                border-radius: 4px;
+              }
+            </style>
+            <div class="card-body">
+              <h5 class="card-title"><%= book.title %></h5>
+              <h6 class="card-subtitle mb-2 text-muted"><%= book.author %></h6>
+              <p class="card-text text-muted">Book ID: <%= book.id %></p>
+            </div>
+            <div class="card-footer bg-white">
+              <% if (user && user.role === 'librarian') { %>
+                <form action="/books/issue">
+                  <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#issueModal<%= book.id %>">
+                    <i class="fas fa-hand-holding me-1"></i> Issue Book
+                  </button>
+                </form>
+              <% } else { %>
+                <span class="badge bg-success w-100 py-2">Available</span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Issue Modal -->
+        <% if (user && user.role === 'librarian') { %>
+          <div class="modal fade" id="issueModal<%= book.id %>" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Issue Book</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="/books/issue" method="POST">
+                  <div class="modal-body">
+                    <h6><%= book.title %></h6>
+                    <p class="text-muted">by <%= book.author %></p>
+                    <input type="hidden" name="bookId" value="<%= book.id %>">
+                    <div class="mb-3">
+                      <label class="form-label">Select Student</label>
+                      <select class="form-select" name="userId" required>
+                        <% users.forEach(user => { %>
+                          <% if (user.role === 'student') { %>
+                            <option value="<%= user.id %>"><%= user.username %> (Student)</option>
+                          <% } %>
+                        <% }) %>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-hand-holding me-1"></i> Issue Book
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        <% } %>
+      <% }) %>
+    </div>
+  <% } %>
+<%- include('../partials/footer') %>
