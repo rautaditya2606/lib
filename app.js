@@ -36,8 +36,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
   secret: 'library_secret',
   resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false }
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+    httpOnly: true
+  }
 }));
 
 // Make session variables available to all views
