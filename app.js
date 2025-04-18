@@ -43,8 +43,7 @@ const sessionConfig = {
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI 
-      || `mongodb://${process.env.MONGODB_USERNAME}:${encodeURIComponent(process.env.MONGODB_PASSWORD)}@127.0.0.1:27017/library_system?authSource=admin`,
+    mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60, // Session TTL in seconds (1 day)
     autoRemove: 'native',
     crypto: {
