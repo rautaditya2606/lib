@@ -7,9 +7,12 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const routes = require('./routes');
 const testRoutes = require('./routes/test');
+const studentRoutes = require('./routes/studentRoutes');
+const librarianRoutes = require('./routes/librarianRoutes');
 const cron = require('node-cron');
 const { checkDueBooks } = require('./utils/emailService');
 const connectDB = require('./config/database');
+const MongoStore = require('connect-mongo');
 
 const app = express();
 
@@ -33,16 +36,35 @@ app.set('view engine', 'ejs');
 // Other middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({
-  secret: 'library_secret',
+
+// Session configuration
+const sessionConfig = {
+  secret: process.env.SESSION_SECRET || 'library_secret',
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI 
+      || `mongodb://${process.env.MONGODB_USERNAME}:${encodeURIComponent(process.env.MONGODB_PASSWORD)}@127.0.0.1:27017/library_system?authSource=admin`,
+    ttl: 24 * 60 * 60, // Session TTL in seconds (1 day)
+    autoRemove: 'native',
+    crypto: {
+      secret: process.env.SESSION_ENCRYPT_SECRET || 'encrypt_secret'
+    }
+  }),
   cookie: { 
     secure: process.env.NODE_ENV === 'production',
     maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
-    httpOnly: true
+    httpOnly: true,
+    sameSite: 'strict'
   }
-}));
+};
+
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // trust first proxy
+  sessionConfig.cookie.secure = true; // serve secure cookies
+}
+
+app.use(session(sessionConfig));
 
 // Make session variables available to all views
 app.use((req, res, next) => {
@@ -55,6 +77,8 @@ app.use((req, res, next) => {
 // Routes
 app.use('/', routes);
 app.use('/', testRoutes);
+app.use('/', studentRoutes);
+app.use('/', librarianRoutes);
 
 // Schedule reminder check every day at 9 AM
 cron.schedule('0 9 * * *', () => {

@@ -1,10 +1,16 @@
-require('dotenv').config();
+const path = require('path');
+// Set root directory
+const rootDir = path.resolve(__dirname, '..');
+
+// Load environment variables from root
+require('dotenv').config({ path: path.join(rootDir, '.env') });
+
 const mongoose = require('mongoose');
 const connectDB = require('./database');
 
-// Import models - update these lines
-const { Book } = require('../models/book');
-const { User } = require('../models/user');
+// Import models using absolute paths
+const { Book } = require(path.join(rootDir, 'models/book'));
+const { User } = require(path.join(rootDir, 'models/user'));
 
 const books = [
   // Coding Section
@@ -160,9 +166,9 @@ const users = [
   {
     role: 'librarian',
     password: 'librarian123',
-    name: 'Dr. Rajesh Kumar',
+    name: 'Librarian Admin',
     email: 'librarian@library.com',
-    librarianId: 'LIB-ADM001'  // Add librarian ID
+    librarianId: 'LIB-ADM001'
   },
   {
     studentId: 'ADT24SOCB0001',
@@ -189,18 +195,27 @@ const users = [
 
 async function seedDatabase() {
   try {
-    // Connect to MongoDB
+    console.log('Running from:', __dirname);
+    console.log('Project root:', rootDir);
+    
     await connectDB();
+    console.log('Connected to MongoDB');
 
     // Clear existing data
-    await Book.deleteMany({});
-    await User.deleteMany({});
+    await Promise.all([
+      Book.deleteMany({}),
+      User.deleteMany({})
+    ]);
+    console.log('Cleared existing data');
 
     // Insert new data
-    await Book.insertMany(books);
-    await User.insertMany(users);
+    const insertedBooks = await Book.insertMany(books);
+    const insertedUsers = await User.insertMany(users);
 
+    console.log(`Seeded ${insertedBooks.length} books and ${insertedUsers.length} users`);
     console.log('Database seeded successfully!');
+    
+    await mongoose.connection.close();
     process.exit(0);
   } catch (error) {
     console.error('Error seeding database:', error);
@@ -208,4 +223,9 @@ async function seedDatabase() {
   }
 }
 
-seedDatabase();
+// Run if called directly
+if (require.main === module) {
+  seedDatabase();
+}
+
+module.exports = seedDatabase;

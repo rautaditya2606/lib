@@ -1,15 +1,15 @@
-<%- include('../partials/header') %>
-  <h1>Register</h1>
-  <form action="/register" method="POST">
-    <div>
-      <label for="username">Username:</label>
-      <input type="text" id="username" name="username" required>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('../partials/header') %>
+    <title>Registration Disabled</title>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>Registration Disabled</h1>
+      <p>Registration functionality has been removed. Please contact the library administration if you require an account.</p>
+      <a href="/" class="btn btn-primary">Home</a>
     </div>
-    <div>
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" required>
-    </div>
-    <br>
-    <button type="submit">Register</button>
-  </form>
-<%- include('../partials/footer') %>
+    <%- include('../partials/footer') %>
+  </body>
+</html>

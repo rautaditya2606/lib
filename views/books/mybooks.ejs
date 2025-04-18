@@ -53,7 +53,7 @@
                 <%= book.transaction.issueDate.toLocaleDateString() %>
               </td>
               <td>
-                <%= book.dueDate.toLocaleDateString() %>
+                <%= book.dueDate ? new Date(book.dueDate).toLocaleDateString() : 'N/A' %>
               </td>
               <td>
                 <span class="status-badge <%= statusClass %>">
@@ -90,7 +90,15 @@
                   </div>
                   <div class="modal-body">
                     <p>Are you sure you want to renew "<strong><%= book.title %></strong>"?</p>
-                    <p>The new due date will be <strong><%= new Date(book.dueDate.getTime() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString() %></strong>.</p>
+                    <% if (book.dueDate) { 
+                         const due = new Date(book.dueDate);
+                         if (!isNaN(due.getTime())) { %>
+                      <p>The new due date will be <strong><%= new Date(due.getTime() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString() %></strong>.</p>
+                    <% } else { %>
+                      <p>Due date information not available.</p>
+                    <% } } else { %>
+                      <p>Due date information not available.</p>
+                    <% } %>
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

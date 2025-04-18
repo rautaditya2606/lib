@@ -4,36 +4,42 @@ const userModel = require('../models/user');
 module.exports = {
   getAvailableBooks: async (req, res) => {
     try {
+      // Read query parameters and convert to lowercase for case-insensitive matching
       const searchQuery = req.query.q ? req.query.q.toLowerCase() : '';
-      const sectionFilter = req.query.section;
-      
-      let books = await bookModel.getAvailableBooks();
-      
-      // Apply search filter
+      const sectionFilter = req.query.section ? req.query.section.toLowerCase() : '';
+
+      // Get all books from DB and then filter for available ones
+      const allBooks = await bookModel.getAllBooks();
+      let availableBooks = allBooks.filter(book => book.available);
+
+      // Apply search filter on title and author fields
       if (searchQuery) {
-        books = books.filter(book => 
+        availableBooks = availableBooks.filter(book =>
           book.title.toLowerCase().includes(searchQuery) ||
           book.author.toLowerCase().includes(searchQuery)
         );
       }
-      
-      // Apply section filter
+
+      // Apply section filter based on the book's section (in lowercase)
       if (sectionFilter) {
-        books = books.filter(book => book.section === sectionFilter);
+        availableBooks = availableBooks.filter(book =>
+          book.section.toLowerCase() === sectionFilter
+        );
       }
 
-      // Get unique sections for filter dropdown
-      const allBooks = await bookModel.getAllBooks();
-      const sections = [...new Set(allBooks.map(book => book.section))];
-      
-      const users = req.session.user?.role === 'librarian' ? 
-                    await userModel.getAllUsers() : [];
-      
-      res.render('books/available', { 
-        books,
+      // Build the list of unique sections (all in lowercase) for the dropdown
+      const sections = [...new Set(allBooks.map(book => book.section.toLowerCase()))];
+
+      // Only librarians need full user list; for students send an empty array
+      const users = req.session.user?.role === 'librarian'
+        ? await userModel.getAllUsers()
+        : [];
+
+      res.render('books/available', {
+        books: availableBooks,
         sections,
-        searchQuery,
-        sectionFilter,
+        searchQuery: req.query.q || '',
+        sectionFilter: req.query.section || '',
         users
       });
     } catch (error) {
@@ -45,7 +51,7 @@ module.exports = {
       res.redirect('/');
     }
   },
-  
+
   getIssueBook: async (req, res) => {
     try {
       const [availableBooks, allBooks, allUsers] = await Promise.all([
@@ -57,7 +63,7 @@ module.exports = {
       const issuedBooks = allBooks.filter(book => !book.available);
       const students = allUsers.filter(user => user.role === 'student');
 
-      res.render('books/issue', { 
+      res.render('books/issue', {
         availableBooks,
         issuedBooks,
         students,
@@ -72,11 +78,11 @@ module.exports = {
       res.redirect('/');
     }
   },
-  
+
   postIssueBook: async (req, res) => {
     try {
       const { bookId, userId } = req.body;
-      
+
       // Validate inputs
       if (!bookId || !userId) {
         req.session.message = {
@@ -86,9 +92,10 @@ module.exports = {
         return res.redirect('/books/issue');
       }
 
+      // Remove parseInt conversion: use IDs as provided (strings)
       const [book, user] = await Promise.all([
-        bookModel.getBookById(parseInt(bookId)),
-        userModel.getUserById(parseInt(userId))
+        bookModel.getBookById(bookId),
+        userModel.getUserById(userId)
       ]);
 
       // Validate book and user exist
@@ -109,7 +116,7 @@ module.exports = {
       }
 
       // Try to issue the book
-      if (await bookModel.issueBook(parseInt(bookId), parseInt(userId))) {
+      if (await bookModel.issueBook(bookId, userId)) {
         req.session.message = {
           type: 'success',
           text: `Successfully issued "${book.title}" to ${user.name} (${user.studentId})`
@@ -130,7 +137,7 @@ module.exports = {
       res.redirect('/books/issue');
     }
   },
-  
+
   getReturnBook: async (req, res) => {
     try {
       const [allBooks, allUsers] = await Promise.all([
@@ -139,8 +146,8 @@ module.exports = {
       ]);
 
       const issuedBooks = allBooks.filter(book => !book.available);
-      
-      res.render('books/return', { 
+
+      res.render('books/return', {
         issuedBooks,
         allUsers
       });
@@ -153,11 +160,12 @@ module.exports = {
       res.redirect('/');
     }
   },
-  
+
   postReturnBook: async (req, res) => {
     try {
       const { bookId } = req.body;
-      if (await bookModel.returnBook(parseInt(bookId))) {
+      // Use bookId as is (string) instead of parseInt(bookId)
+      if (await bookModel.returnBook(bookId)) {
         req.session.message = 'Book returned successfully!';
       } else {
         req.session.message = 'Failed to return book. It may not be issued.';
@@ -172,30 +180,39 @@ module.exports = {
       res.redirect('/books/return');
     }
   },
-  
+
   getMyBooks: async (req, res) => {
     try {
-      const userId = req.session.user.id;
+      // Get user id from session; support both _id and id
+      const userId = req.session.user && (req.session.user._id || req.session.user.id);
+      if (!userId) throw new Error('User not logged in properly');
+
       const allBooks = await bookModel.getAllBooks();
-      
+
       const myBooks = await Promise.all(
         allBooks
-          .filter(book => !book.available && book.issuedTo === userId)
+          .filter(book =>
+            !book.available &&
+            book.issuedTo != null &&
+            book.issuedTo.toString() === String(userId)
+          )
           .map(async book => {
-            const transaction = await bookModel.getTransactionByBookId(book.id);
-            const daysRemaining = Math.ceil((book.dueDate - new Date()) / (1000 * 60 * 60 * 24));
-            
+            // Convert Mongoose document to a plain object, setting an explicit id property
+            const plain = book.toObject();
+            plain.id = plain._id.toString();
+            const transaction = await bookModel.getTransactionByBookId(plain.id);
+            const daysRemaining = Math.ceil((plain.dueDate - new Date()) / (1000 * 60 * 60 * 24));
             return {
-              ...book,
+              ...plain,
               transaction: transaction || { issueDate: new Date() },
-              fine: await bookModel.calculateFine(book.id),
+              fine: await bookModel.calculateFine(plain.id),
               daysRemaining: daysRemaining > 0 ? daysRemaining : 0,
               isOverdue: daysRemaining <= 0
             };
           })
       );
-    
-      res.render('books/mybooks', { 
+
+      res.render('books/mybooks', {
         myBooks,
         currentDate: new Date()
       });
@@ -212,7 +229,9 @@ module.exports = {
   getRenewBook: async (req, res) => {
     try {
       const userId = req.session.user.id;
-      const myBooks = (await bookModel.getAllBooks()).filter(book => !book.available && book.issuedTo === userId);
+      const myBooks = (await bookModel.getAllBooks()).filter(book =>
+        !book.available && book.issuedTo === userId
+      );
       res.render('books/renew', { myBooks });
     } catch (error) {
       console.error('Error in getRenewBook:', error);
@@ -223,7 +242,7 @@ module.exports = {
       res.redirect('/');
     }
   },
-  
+
   postRenewBook: async (req, res) => {
     try {
       const { bookId } = req.body;
@@ -247,8 +266,8 @@ module.exports = {
     try {
       const query = req.query.q.toLowerCase();
       const allBooks = await bookModel.getAllBooks();
-      const results = allBooks.filter(book => 
-        book.title.toLowerCase().includes(query) || 
+      const results = allBooks.filter(book =>
+        book.title.toLowerCase().includes(query) ||
         book.author.toLowerCase().includes(query)
       );
       res.render('books/search', { results, query });

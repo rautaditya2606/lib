@@ -132,14 +132,26 @@
               <a class="nav-link" href="/books/return"><i class="fas fa-undo me-1"></i> Returns</a>
             </li>
           <% } %>
+          <% if (user && user.role === 'student') { %>
+            <li class="nav-item">
+              <a class="nav-link" href="/qr" title="My QR Code">
+                <i class="fas fa-qrcode"></i>
+              </a>
+            </li>
+          <% } else if (user && user.role === 'librarian') { %>
+            <li class="nav-item">
+              <a class="nav-link" href="/librarian/scan" title="Scan Student QR">
+                <i class="fas fa-camera-retro"></i>
+              </a>
+            </li>
+          <% } %>
           <% if (user) { %>
-                <a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt me-1"></i> Logout</a>
+            <li class="nav-item">
+              <a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt me-1"></i> Logout</a>
+            </li>
           <% } else { %>
             <li class="nav-item">
               <a class="nav-link" href="/login"><i class="fas fa-sign-in-alt me-1"></i> Login</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/register"><i class="fas fa-user-plus me-1"></i> Register</a>
             </li>
           <% } %>
         </ul>

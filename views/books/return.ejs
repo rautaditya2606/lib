@@ -12,23 +12,19 @@
       <h2 class="h5 mb-0">Return a Book</h2>
     </div>
     <div class="card-body">
-      <form action="/books/return" method="POST">
-        <div class="mb-3">
-          <label for="bookId" class="form-label">Select Book to Return</label>
-          <select id="bookId" name="bookId" class="form-select" required>
-            <option value="">Choose a book to return...</option>
-            <% issuedBooks.forEach(book => { 
-              const user = allUsers.find(u => u.id === book.issuedTo);
-            %>
-              <option value="<%= book.id %>">
-                <%= book.title %> by <%= book.author %> 
-                (Issued to: <%= user ? user.studentId : 'Unknown' %>)
-              </option>
+      <form action="/books/return" method="POST" id="returnForm">
+        <!-- Book Search Input with Datalist for Issued Books -->
+        <div class="mb-4">
+          <label for="returnBookSearch" class="form-label">Search Book to Return</label>
+          <input list="returnBookOptions" id="returnBookSearch" name="bookId" class="form-control" placeholder="Type book title or ID..." required>
+          <datalist id="returnBookOptions">
+            <% issuedBooks.forEach(book => { %>
+              <option value="<%= book.id %>"><%= book.title %> (ID: <%= book.id %>)</option>
             <% }) %>
-          </select>
+          </datalist>
         </div>
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-undo me-2"></i>Return Book
+        <button type="submit" class="btn btn-primary" id="submitReturnBtn">
+          <i class="fas fa-undo me-1"></i> Return Book
         </button>
       </form>
     </div>

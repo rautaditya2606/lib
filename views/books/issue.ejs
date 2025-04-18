@@ -8,9 +8,9 @@
     </div>
     <div class="card-body">
       <form action="/books/issue" method="POST" id="issueForm">
-        <!-- Book Selection -->
+        <!-- Replace Book Search Input with Dropdown for Book Selection -->
         <div class="mb-4">
-          <label class="form-label">Select Book</label>
+          <label for="bookId" class="form-label">Select Book</label>
           <select id="bookId" name="bookId" class="form-select" required>
             <option value="">Choose a book...</option>
             <% availableBooks.forEach(book => { %>
@@ -20,13 +20,13 @@
           <div class="invalid-feedback">Please select a book</div>
         </div>
 
-        <!-- Student Selection -->
+        <!-- Replace Student Search Input with Dropdown for Student Selection -->
         <div class="mb-4">
-          <label class="form-label">Select Student</label>
+          <label for="userId" class="form-label">Select Student</label>
           <select id="userId" name="userId" class="form-select" required>
             <option value="">Choose a student...</option>
             <% allUsers.filter(u => u.role === 'student').forEach(student => { %>
-              <option value="<%= student.id %>"><%= student.studentId %> - <%= student.name %></option>
+              <option value="<%= student.id %>"><%= student.studentId %></option>
             <% }) %>
           </select>
           <div class="invalid-feedback">Please select a student</div>
@@ -49,8 +49,8 @@
         <table class="table table-striped table-hover">
           <thead class="table-dark">
             <tr>
-              <th>ID</th>
               <th>Title</th>
+              <th>ID</th>
               <th>Author</th>
               <th>Issued To</th>
               <th>Due Date</th>
@@ -59,11 +59,15 @@
           <tbody>
             <% issuedBooks.forEach(book => { %>
               <tr>
-                <td><%= book.id %></td>
                 <td><%= book.title %></td>
+                <td><%= book.id %></td>
                 <td><%= book.author %></td>
                 <td>
-                  <% const user = allUsers.find(u => u.id === book.issuedTo) %>
+                  <% 
+                    const user = allUsers.find(u => 
+                      u._id.toString() === (book.issuedTo ? book.issuedTo.toString() : '')
+                    ); 
+                  %>
                   <%= user ? user.studentId : 'Unknown' %>
                 </td>
                 <td><%= book.dueDate ? book.dueDate.toDateString() : 'N/A' %></td>
@@ -75,28 +79,6 @@
     </div>
   </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const form = document.getElementById('issueForm');
-  const bookSelect = document.getElementById('bookId');
-  const userSelect = document.getElementById('userId');
-  
-  form.addEventListener('submit', function(e) {
-    if (!bookSelect.value || !userSelect.value) {
-      e.preventDefault();
-      if (!bookSelect.value) bookSelect.classList.add('is-invalid');
-      if (!userSelect.value) userSelect.classList.add('is-invalid');
-    }
-  });
-
-  [bookSelect, userSelect].forEach(select => {
-    select.addEventListener('change', function() {
-      this.classList.remove('is-invalid');
-    });
-  });
-});
-</script>
 
 <style>
 .form-select {

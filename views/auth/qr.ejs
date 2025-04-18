@@ -1,0 +1,8 @@
+<%- include('../partials/header') %>
+<div class="container my-5 text-center">
+  <h1>Login Successful</h1>
+  <p>Scan this QR code with the librarian's scanner to verify your identity.</p>
+  <img src="<%= qrCodeUrl %>" alt="QR Code" class="img-fluid" style="max-width:300px;">
+  <p><small>This token expires in 5 minutes.</small></p>
+</div>
+<%- include('../partials/footer') %>
