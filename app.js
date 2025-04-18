@@ -38,12 +38,16 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Session configuration
+const mongoUrl = (process.env.MONGODB_URI && process.env.MONGODB_URI.trim() !== "")
+  ? process.env.MONGODB_URI
+  : `mongodb://${process.env.MONGODB_USERNAME}:${encodeURIComponent(process.env.MONGODB_PASSWORD)}@127.0.0.1:27017/library_system?authSource=admin`;
+
 const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'library_secret',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
+    mongoUrl: mongoUrl,
     ttl: 24 * 60 * 60, // Session TTL in seconds (1 day)
     autoRemove: 'native',
     crypto: {
